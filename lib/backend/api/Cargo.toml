@@ -1,0 +1,23 @@
+[package]
+name = "events-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lambda_runtime = { version = "0.13.0" }
+lambda_http = { version = "0.14.0", features = ["apigw_http"] }
+axum = { version = "0.8.1" }
+tokio = { version = "1.43.0", features = ["macros"] }
+serde = "1.0.217"
+serde_json = "1.0.138"
+sentry = { version = "0.36.0", default-features = false, features = [
+    "backtrace",
+    "tokio",
+    "tower",
+    "panic",
+    "rustls",
+    "ureq",
+    "contexts",
+    "debug-images",
+] }
+sentry-tower = { version = "0.36.0", features = ["axum", "axum-matched-path"] }
