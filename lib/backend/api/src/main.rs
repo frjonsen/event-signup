@@ -1,8 +1,14 @@
-use axum::{http::StatusCode, routing::get, Json, Router};
+use std::{env, sync::LazyLock};
+
+use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
 use lambda_http::{run, Error};
 use serde_json::{json, Value};
 
-async fn get_event() -> Json<Value> {
+static EVENT_TABLE: LazyLock<String> =
+    LazyLock::new(|| env::var("EVENT_TABLE_ARN").expect("EVENT_TABLE must be set"));
+
+async fn get_event(State(dynamodb): State<aws_sdk_dynamodb::Client>) -> Json<Value> {
+    dynamodb.query().table_name(&*EVENT_TABLE);
     Json(json!({"msg": "hello"}))
 }
 
@@ -17,23 +23,30 @@ async fn server_error() -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     ))
 }
 
+async fn real_main() -> Result<(), Error> {
+    let config = aws_config::load_from_env().await;
+    let dynamodb_client = aws_sdk_dynamodb::Client::new(&config);
+
+    let api = Router::new()
+        .route("/", get(get_event))
+        .route("/user_error", get(user_error))
+        .route("/server_error", get(server_error))
+        .with_state(dynamodb_client);
+
+    let app = Router::new().nest("/api", api);
+
+    run(app).await
+}
+
 fn main() -> Result<(), Error> {
     let _guard = sentry::init(sentry::ClientOptions {
         attach_stacktrace: true,
         ..Default::default()
     });
-    let api = Router::new()
-        .route("/", get(get_event))
-        .route("/user_error", get(user_error))
-        .route("/server_error", get(server_error))
-        .layer(sentry_tower::NewSentryLayer::new_from_top())
-        .layer(sentry_tower::SentryHttpLayer::with_transaction());
-
-    let app = Router::new().nest("/api", api);
 
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(run(app))
+        .block_on(real_main())
 }

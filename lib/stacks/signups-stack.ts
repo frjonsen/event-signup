@@ -28,7 +28,11 @@ export class SignupsStack extends cdk.Stack {
       domain: zone,
       cloudfront: props.cloudfront,
     });
-    const backend = new Backend(this, { httpApi: gateway.httpApi, sentry });
     const eventTable = new EventTable(this);
+    const backend = new Backend(this, {
+      httpApi: gateway.httpApi,
+      sentry,
+      eventTable,
+    });
   }
 }

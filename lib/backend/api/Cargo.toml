@@ -21,3 +21,5 @@ sentry = { version = "0.36.0", default-features = false, features = [
     "debug-images",
 ] }
 sentry-tower = { version = "0.36.0", features = ["axum", "axum-matched-path"] }
+aws-sdk-dynamodb = "1.65.0"
+aws-config = { version = "1.5.16", features = ["behavior-version-latest"] }

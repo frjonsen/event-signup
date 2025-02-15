@@ -3,9 +3,11 @@ import { Architecture } from "aws-cdk-lib/aws-lambda";
 import { RustFunction } from "cargo-lambda-cdk";
 import { Construct } from "constructs";
 import { Sentry } from "../sentry";
+import { EventTable } from "../event-table";
 
 export interface ApiLambdaProps {
   sentry: Sentry;
+  eventTable: EventTable;
 }
 
 export class ApiLambda extends RustFunction {
@@ -18,6 +20,7 @@ export class ApiLambda extends RustFunction {
       },
       environment: {
         SENTRY_DSN: props.sentry.backendDsn.stringValue,
+        EVENT_TABLE_ARN: props.eventTable.tableArn,
       },
     });
   }
