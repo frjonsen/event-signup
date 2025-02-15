@@ -25,14 +25,34 @@ export class Cloudfront extends Construct {
       cdk.Fn.ref("AWS::Region"),
       "amazonaws.com",
     ]);
+
+    const originPolicy = new cf.OriginRequestPolicy(this, "OriginPolicy", {
+      headerBehavior: cf.OriginRequestHeaderBehavior.allowList(
+        "access-control-request-method",
+        "origin",
+        "user-agent",
+        "sentry-trace",
+      ),
+      queryStringBehavior: cf.OriginRequestQueryStringBehavior.all(),
+    });
+
+    const apiOrigin = new origins.HttpOrigin(origin);
     const distribution = new cf.Distribution(this, "Distribution", {
       certificate: props.cloudfront.certificate,
       domainNames: [Domain.EVENTS_SIGNUP_DOMAIN],
+      priceClass: cf.PriceClass.PRICE_CLASS_100,
+      httpVersion: cf.HttpVersion.HTTP2_AND_3,
       defaultBehavior: {
-        origin: new origins.HttpOrigin(origin),
         viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         allowedMethods: cf.AllowedMethods.ALLOW_ALL,
+        originRequestPolicy: originPolicy,
+        origin: apiOrigin,
       },
+    });
+
+    distribution.addBehavior("/api/*", apiOrigin, {
+      cachePolicy: cf.CachePolicy.CACHING_DISABLED,
+      originRequestPolicy: originPolicy,
     });
 
     const target = route53.RecordTarget.fromAlias(
