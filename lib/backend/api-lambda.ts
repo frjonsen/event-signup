@@ -23,5 +23,7 @@ export class ApiLambda extends RustFunction {
         EVENT_TABLE_ARN: props.eventTable.tableArn,
       },
     });
+
+    props.eventTable.grantReadWriteData(this);
   }
 }
