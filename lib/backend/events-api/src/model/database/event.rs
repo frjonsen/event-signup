@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 
 use aws_sdk_dynamodb::types::{AttributeValue, ScalarAttributeType};
+use axum::{response::IntoResponse, Json};
 use serde::Serialize;
 use uuid::Uuid;
 
 use super::{
     errors::ModelError,
     util::{
-        get_datetime, get_delimited, get_delimited_datetime, get_field, get_nested_object,
-        get_optional_field,
+        get_datetime, get_delimited, get_delimited_datetime, get_field, get_list,
+        get_nested_object, get_optional_field,
     },
 };
 
@@ -21,6 +22,7 @@ mod fields {
     pub const PARTICIPANT_LIMIT: &str = "ParticipantLimit";
     pub const CONTACT: &str = "Contact";
     pub const SIGNUP_END_DATE: &str = "SignupEndDate";
+    pub const PHOTO_ID: &str = "PhotoId";
 }
 
 #[derive(serde::Deserialize, Serialize)]
@@ -33,12 +35,21 @@ pub struct Contact {
 pub struct Event {
     id: Uuid,
     title: HashMap<String, String>,
+    #[serde(with = "time::serde::rfc3339")]
     signup_end_date: time::OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339")]
     event_date: time::OffsetDateTime,
     admin_id: String,
     contact: Contact,
     description: HashMap<String, String>,
     limit: Option<u16>,
+    photo_id: Vec<Uuid>,
+}
+
+impl IntoResponse for Event {
+    fn into_response(self) -> axum::response::Response {
+        Json(self).into_response()
+    }
 }
 
 impl TryFrom<&HashMap<String, AttributeValue>> for Event {
@@ -55,6 +66,7 @@ impl TryFrom<&HashMap<String, AttributeValue>> for Event {
             title: get_nested_object(item, fields::TITLE)?,
             limit: get_optional_field(item, fields::PARTICIPANT_LIMIT, ScalarAttributeType::N)?,
             contact: get_nested_object(item, fields::CONTACT)?,
+            photo_id: get_list(item, fields::PHOTO_ID)?,
         })
     }
 }

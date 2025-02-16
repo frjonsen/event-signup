@@ -11,12 +11,13 @@ export interface ApiGatewayProps {
 
 export class ApiGateway extends Construct {
   public readonly httpApi: HttpApi;
+  public readonly cloudFront: Cloudfront;
   constructor(scope: Construct, props: ApiGatewayProps) {
     super(scope, "ApiGateway");
 
     this.httpApi = new HttpApi(this);
 
-    const cloudfront = new Cloudfront(this, {
+    this.cloudFront = new Cloudfront(this, {
       cloudfront: props.cloudfront,
       httpApi: this.httpApi,
       domain: props.domain,

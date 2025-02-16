@@ -27,6 +27,32 @@ where
     Ok(parsed_value)
 }
 
+pub fn get_list<T>(
+    item: &HashMap<String, AttributeValue>,
+    field: &str,
+) -> Result<Vec<T>, ModelError>
+where
+    T: FromStr,
+{
+    let read_value = match item.get(field) {
+        None => return Ok(Vec::new()),
+        Some(f) => f,
+    }
+    .as_ss()
+    .map_err(|_| ModelError::InvalidData(format!("{field} is not a string list")))?;
+
+    let mut parsed_values = Vec::new();
+    for value in read_value.into_iter() {
+        parsed_values.push(
+            value
+                .parse()
+                .map_err(|_| ModelError::InvalidGenericType(field.to_owned(), value.to_owned()))?,
+        );
+    }
+
+    Ok(parsed_values)
+}
+
 pub fn get_optional_field<T>(
     item: &HashMap<String, AttributeValue>,
     field: &str,

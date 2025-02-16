@@ -1,6 +1,6 @@
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
-import * as consts from "./consts";
+import * as consts from "../consts";
 
 export class EventTable extends dynamodb.TableV2 {
   constructor(scope: Construct) {

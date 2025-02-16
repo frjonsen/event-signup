@@ -1,6 +1,6 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { EventTable } from "../event-table";
+import { EventTable } from "../backend/event-table";
 import { Domain } from "../domain";
 import { HttpApi } from "../gateway/http-gateway";
 import { CloudfrontStack } from "./cloudfront-stack";
@@ -28,11 +28,9 @@ export class SignupsStack extends cdk.Stack {
       domain: zone,
       cloudfront: props.cloudfront,
     });
-    const eventTable = new EventTable(this);
     const backend = new Backend(this, {
-      httpApi: gateway.httpApi,
+      gateway,
       sentry,
-      eventTable,
     });
   }
 }

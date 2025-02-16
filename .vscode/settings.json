@@ -1,3 +1,3 @@
 {
-  "rust-analyzer.linkedProjects": ["lib/backend/api/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["lib/backend/events-api/Cargo.toml"]
 }
