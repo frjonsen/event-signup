@@ -8,15 +8,17 @@ import { Construct } from "constructs";
 import { HttpApi } from "./http-gateway";
 import { CloudfrontStack } from "../stacks/cloudfront-stack";
 import { Domain } from "../domain";
+import { Frontend } from "../frontend/hosting/frontend";
 
 export interface CloudfrontProps {
   httpApi: HttpApi;
   cloudfront: CloudfrontStack;
   domain: Domain;
+  frontend: Frontend;
 }
 
 export class Cloudfront extends Construct {
-  private readonly distribution: cf.Distribution;
+  public readonly distribution: cf.Distribution;
   constructor(scope: Construct, props: CloudfrontProps) {
     super(scope, "Cloudfront");
 
@@ -39,16 +41,33 @@ export class Cloudfront extends Construct {
     });
 
     const apiOrigin = new origins.HttpOrigin(origin);
+    const frontendOrigin = origins.S3BucketOrigin.withOriginAccessControl(
+      props.frontend.bucket,
+    );
     this.distribution = new cf.Distribution(this, "Distribution", {
       certificate: props.cloudfront.certificate,
-      domainNames: [Domain.EVENTS_SIGNUP_DOMAIN],
+      domainNames: [Domain.EVENTS_DOMAIN],
       priceClass: cf.PriceClass.PRICE_CLASS_100,
       httpVersion: cf.HttpVersion.HTTP2_AND_3,
       defaultBehavior: {
         viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         allowedMethods: cf.AllowedMethods.ALLOW_ALL,
         originRequestPolicy: originPolicy,
-        origin: apiOrigin,
+        origin: frontendOrigin,
+        edgeLambdas: [
+          {
+            eventType: cf.LambdaEdgeEventType.VIEWER_REQUEST,
+            functionVersion: props.cloudfront.redirect.currentVersion,
+          },
+        ],
+      },
+      defaultRootObject: "index.html",
+      additionalBehaviors: {
+        "index.html": {
+          viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          origin: frontendOrigin,
+          cachePolicy: cf.CachePolicy.CACHING_DISABLED,
+        },
       },
     });
 
@@ -56,6 +75,7 @@ export class Cloudfront extends Construct {
       cachePolicy: cf.CachePolicy.CACHING_DISABLED,
       originRequestPolicy: originPolicy,
       allowedMethods: cf.AllowedMethods.ALLOW_ALL,
+      viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     });
 
     const target = route53.RecordTarget.fromAlias(
@@ -63,12 +83,12 @@ export class Cloudfront extends Construct {
     );
     new route53.ARecord(this, "ARecord", {
       target,
-      recordName: Domain.EVENTS_SIGNUP_DOMAIN,
+      recordName: Domain.EVENTS_DOMAIN,
       zone: props.domain.zone,
     });
     new route53.AaaaRecord(this, "AaaaRecord", {
       target,
-      recordName: Domain.EVENTS_SIGNUP_DOMAIN,
+      recordName: Domain.EVENTS_DOMAIN,
       zone: props.domain.zone,
     });
   }

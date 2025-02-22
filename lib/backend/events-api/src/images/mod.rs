@@ -6,8 +6,8 @@ use tracing::info;
 
 pub mod errors;
 
-const MAX_IMAGE_DIMENSION: u32 = 1280;
-const MIN_IMAGE_DIMENSION: u32 = 360;
+const MAX_IMAGE_DIMENSION: u32 = 1920;
+const MIN_IMAGE_DIMENSION: u32 = 800;
 
 #[derive(Debug, PartialEq)]
 pub enum ImageType {
@@ -66,7 +66,7 @@ pub fn assert_image_size(image: DynamicImage) -> DynamicImage {
     )
 }
 
-pub async fn reencode_image(name: &str, image: DynamicImage) -> Result<Vec<u8>, ImageUploadError> {
+pub async fn conform_image(name: &str, image: DynamicImage) -> Result<Vec<u8>, ImageUploadError> {
     let incoming_image = assert_image_size(image);
 
     info!("Encoding file {} as avif", name);

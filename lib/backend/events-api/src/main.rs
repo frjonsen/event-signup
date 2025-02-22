@@ -1,12 +1,10 @@
 use api::get_event::get_event;
 use axum::{
-    extract::DefaultBodyLimit,
-    http::StatusCode,
+    extract::{DefaultBodyLimit, FromRef},
     routing::{get, post},
-    Json, Router,
+    Router,
 };
 use lambda_http::{run, Error};
-use serde_json::{json, Value};
 use tracing_subscriber::fmt::format;
 
 mod api;
@@ -14,37 +12,51 @@ mod configuration;
 mod images;
 mod model;
 
+#[derive(Clone)]
+struct ApiState {
+    dynamodb_client: aws_sdk_dynamodb::Client,
+    s3_client: aws_sdk_s3::Client,
+}
+
+impl FromRef<ApiState> for aws_sdk_dynamodb::Client {
+    fn from_ref(state: &ApiState) -> aws_sdk_dynamodb::Client {
+        state.dynamodb_client.clone()
+    }
+}
+
+impl FromRef<ApiState> for aws_sdk_s3::Client {
+    fn from_ref(state: &ApiState) -> aws_sdk_s3::Client {
+        state.s3_client.clone()
+    }
+}
+
 fn setup_logging() {
     tracing_subscriber::fmt()
         .event_format(format::json().with_thread_ids(false).with_ansi(false))
         .init();
 }
 
-async fn user_error() -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    Err((StatusCode::BAD_REQUEST, Json(json!({"msg": "user bad!"}))))
-}
-
-async fn server_error() -> Result<Json<Value>, (StatusCode, Json<Value>)> {
-    Err((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Json(json!({"msg": "bad!"})),
-    ))
-}
-
 async fn real_main() -> Result<(), Error> {
     let config = aws_config::load_from_env().await;
     let dynamodb_client = aws_sdk_dynamodb::Client::new(&config);
+    let s3_client = aws_sdk_s3::Client::new(&config);
 
-    let api = Router::new()
-        .route("/event/{eventId}", get(get_event))
+    let state = ApiState {
+        dynamodb_client,
+        s3_client,
+    };
+
+    let public_router = Router::new().route("/event/{eventId}", get(get_event));
+
+    let admin_api = Router::new()
         .route("/event/{eventId}/images", post(api::post_image::post_image))
         // 10 mb limit for images
-        .layer(DefaultBodyLimit::disable())
-        .route("/user_error", get(user_error))
-        .route("/server_error", get(server_error))
-        .with_state(dynamodb_client);
+        .layer(DefaultBodyLimit::disable());
 
-    let app = Router::new().nest("/api", api);
+    let app = Router::new()
+        .nest("/api/public", public_router)
+        .nest("/api/admin", admin_api)
+        .with_state(state);
 
     run(app).await
 }

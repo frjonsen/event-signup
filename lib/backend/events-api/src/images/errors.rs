@@ -22,6 +22,8 @@ pub enum ImageUploadError {
     ImageDecodingError { image_name: String },
     #[error("Image encoding error")]
     ImageEncodingError { image_name: String },
+    #[error("Storage error")]
+    StorageError,
 }
 
 impl Into<RestError> for ImageUploadError {
@@ -66,6 +68,11 @@ impl Into<RestError> for ImageUploadError {
                 status_code: http::StatusCode::BAD_REQUEST,
                 error_code: "IMAGE_TOO_SMALL".to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
+            },
+            ImageUploadError::StorageError => RestError {
+                status_code: http::StatusCode::INTERNAL_SERVER_ERROR,
+                error_code: "STORAGE_ERROR".to_string(),
+                error_params: None,
             },
         }
     }

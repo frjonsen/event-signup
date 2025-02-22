@@ -10,14 +10,15 @@ export interface ApiLambdaProps {
   sentry: Sentry;
   eventTable: EventTable;
   images: EventImageStorage;
+  memory?: number;
 }
 
 export class ApiLambda extends RustFunction {
-  constructor(scope: Construct, props: ApiLambdaProps) {
-    super(scope, "ApiLambda", {
+  constructor(scope: Construct, id: string, props: ApiLambdaProps) {
+    super(scope, id, {
       architecture: Architecture.ARM_64,
       timeout: Duration.minutes(1),
-      memorySize: 2048,
+      memorySize: props.memory ?? 128,
       manifestPath: "lib/backend/events-api",
       bundling: {
         assetHashType: AssetHashType.SOURCE,
@@ -25,7 +26,8 @@ export class ApiLambda extends RustFunction {
       environment: {
         SENTRY_DSN: props.sentry.backendDsn.stringValue,
         EVENT_TABLE_ARN: props.eventTable.tableArn,
-        EVENT_IMAGES_BUCKET_ARN: props.images.bucketArn,
+        EVENT_IMAGES_BUCKET_NAME: props.images.bucketName,
+        EVENT_IMAGES_BUCKET_PREFIX: "static/events",
       },
     });
 

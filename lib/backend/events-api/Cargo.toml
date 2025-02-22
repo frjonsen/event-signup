@@ -35,3 +35,4 @@ image = { version = "0.25.5", default-features = false, features = [
     "nasm",
 ] }
 bytes = "1.10.0"
+aws-sdk-s3 = { version = "1.76.0", features = ["behavior-version-latest"] }

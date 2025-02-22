@@ -1,16 +1,19 @@
 use std::io::Cursor;
 
+use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use axum::{
-    extract::{multipart::Field, Multipart},
+    extract::{multipart::Field, Multipart, Path, State},
     http,
 };
 use bytes::BytesMut;
 use image::{DynamicImage, ImageReader};
 use tracing::info;
+use uuid::Uuid;
 
 use crate::{
+    configuration::{EVENT_IMAGES_BUCKET_NAME, EVENT_IMAGES_BUCKET_PREFIX},
     images::{
-        errors::ImageUploadError, is_image_too_small, is_image_within_bounds, reencode_image,
+        conform_image, errors::ImageUploadError, is_image_too_small, is_image_within_bounds,
         ImageType,
     },
     model::rest::{PostImagesResponse, RestError},
@@ -63,7 +66,7 @@ async fn read_file_with_limit(
     Ok(image)
 }
 
-async fn handle_image(field: Field<'_>) -> Result<Vec<u8>, ImageUploadError> {
+async fn handle_image_field(field: Field<'_>) -> Result<Vec<u8>, ImageUploadError> {
     let name = match field.file_name() {
         Some(name) => name.to_owned(),
         None => return Err(ImageUploadError::InvalidImage),
@@ -78,19 +81,56 @@ async fn handle_image(field: Field<'_>) -> Result<Vec<u8>, ImageUploadError> {
     if is_image_too_small(&incoming_image) {
         return Err(ImageUploadError::ImageTooSmall { image_name: name });
     }
+
     if content_type == ImageType::Avif && is_image_within_bounds(&incoming_image) {
-        info!("Image is already of the right type and acceptable size. Returning as is.");
+        info!("Image is already of the right type and acceptable size. Using as is.");
         return Ok(Vec::from(incoming_image.as_bytes()));
     } else {
-        reencode_image(&name, incoming_image).await
+        conform_image(&name, incoming_image).await
     }
 }
 
-pub async fn post_image(mut multipart: Multipart) -> Result<PostImagesResponse, RestError> {
+pub async fn upload_image(
+    s3: &aws_sdk_s3::Client,
+    event: Uuid,
+    image: Vec<u8>,
+) -> Result<Uuid, ImageUploadError> {
+    let new_image_id = Uuid::new_v4();
+
+    let body = SdkBody::from(image);
+    let image = ByteStream::from(body);
+    let path = format!(
+        "{prefix}/{event}/{id}.avif",
+        prefix = &*EVENT_IMAGES_BUCKET_PREFIX,
+        event = event,
+        id = new_image_id
+    );
+    s3.put_object()
+        .bucket(&*EVENT_IMAGES_BUCKET_NAME)
+        .key(path)
+        .body(image)
+        .send()
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+            ImageUploadError::StorageError
+        })?;
+
+    Ok(new_image_id)
+}
+
+pub async fn post_image(
+    State(s3): State<aws_sdk_s3::Client>,
+    State(dynamodb): State<aws_sdk_dynamodb::Client>,
+    Path(event_id): Path<Uuid>,
+    mut multipart: Multipart,
+) -> Result<PostImagesResponse, RestError> {
+    let mut images = Vec::new();
     loop {
         match multipart.next_field().await {
             Ok(Some(file)) => {
-                let _ = handle_image(file).await.map_err(|e| e.into())?;
+                let image = handle_image_field(file).await.map_err(|e| e.into())?;
+                images.push(image);
             }
             Ok(None) => break,
             Err(e) => {
@@ -103,8 +143,21 @@ pub async fn post_image(mut multipart: Multipart) -> Result<PostImagesResponse, 
             }
         }
     }
+
+    let mut image_ids = Vec::new();
+    for image in images {
+        let image_id = upload_image(&s3, event_id, image)
+            .await
+            .map_err(|e| e.into())?;
+        info!("Uploaded image with id {}", image_id);
+        image_ids.push(image_id);
+    }
+
     Ok(PostImagesResponse {
-        event: uuid::Uuid::new_v4(),
-        images: vec!["image.jpg".to_string()],
+        event: event_id,
+        images: image_ids
+            .into_iter()
+            .map(|i| format!("{}.avif", i))
+            .collect(),
     })
 }
