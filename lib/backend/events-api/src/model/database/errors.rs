@@ -1,4 +1,10 @@
-use crate::model::rest::RestError;
+#[derive(Debug, thiserror::Error)]
+#[error("Failed to query database")]
+pub struct DatabaseQueryFailed;
+
+#[derive(Debug, thiserror::Error)]
+#[error("SDK returned an unexpected response: {0}")]
+pub struct UnknownSdkError(pub String);
 
 #[derive(thiserror::Error, Debug)]
 pub enum ModelError {
@@ -12,14 +18,4 @@ pub enum ModelError {
     InvalidGenericType(String, String),
     #[error("Field {0} is missing delimiter")]
     MissingDelimiter(String),
-}
-
-impl Into<RestError> for ModelError {
-    fn into(self) -> RestError {
-        RestError {
-            status_code: axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            error_code: "INVALID_MODEL".to_string(),
-            error_params: None,
-        }
-    }
 }

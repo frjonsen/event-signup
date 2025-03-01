@@ -16,7 +16,7 @@ use crate::{
         conform_image, errors::ImageUploadError, is_image_too_small, is_image_within_bounds,
         ImageType,
     },
-    model::rest::{PostImagesResponse, RestError},
+    model::rest::{error_codes, PostImagesResponse, RestError},
 };
 
 // 10mb
@@ -129,7 +129,9 @@ pub async fn post_image(
     loop {
         match multipart.next_field().await {
             Ok(Some(file)) => {
-                let image = handle_image_field(file).await.map_err(|e| e.into())?;
+                let image = handle_image_field(file)
+                    .await
+                    .map_err(|e| RestError::from(e))?;
                 images.push(image);
             }
             Ok(None) => break,
@@ -137,7 +139,7 @@ pub async fn post_image(
                 sentry::capture_error(&e);
                 return Err(RestError {
                     status_code: http::StatusCode::BAD_REQUEST,
-                    error_code: "MULTIPART_READ_ERROR".to_string(),
+                    error_code: error_codes::IMAGE_UPLOAD_FAILED.to_string(),
                     error_params: None,
                 });
             }
@@ -148,7 +150,7 @@ pub async fn post_image(
     for image in images {
         let image_id = upload_image(&s3, event_id, image)
             .await
-            .map_err(|e| e.into())?;
+            .map_err(|e| RestError::from(e))?;
         info!("Uploaded image with id {}", image_id);
         image_ids.push(image_id);
     }

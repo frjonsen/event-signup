@@ -1,0 +1,16 @@
+{
+    "events": "Events",
+    "loading": "Loading",
+    "backend": {
+        "UNEXPECTED_SERVER_ERROR": "An unexpected server error occurred",
+        "EVENT_NOT_FOUND": "Event not found",
+        "IMAGE_UPLOAD_FAILED": "Image upload failed",
+        "INVALID_IMAGE": "Invalid image",
+        "UNSUPPORTED_IMAGE_FORMAT": "Unsupported image format",
+        "IMAGE_CONVERSION_ERROR": "An error occurred when converting the image",
+        "IMAGE_TOO_LARGE": "The image is too large",
+        "IMAGE_TOO_SMALL": "The image is too small",
+        "IMAGE_STORAGE_ERROR": "An error occurred when storing the image",
+        "UNKNOWN_ERROR": "An unknown error occurred"
+    }
+}

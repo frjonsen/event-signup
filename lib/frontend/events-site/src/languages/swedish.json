@@ -1,0 +1,16 @@
+{
+    "events": "Evenemang",
+    "loading": "Laddar",
+    "backend": {
+        "UNEXPECTED_SERVER_ERROR": "Ett oväntat serverfel inträffade",
+        "EVENT_NOT_FOUND": "Evenemanget hittades inte",
+        "IMAGE_UPLOAD_FAILED": "Bilduppladdning misslyckades",
+        "INVALID_IMAGE": "Ogiltig bild",
+        "UNSUPPORTED_IMAGE_FORMAT": "Bildformatet stöds inte",
+        "IMAGE_CONVERSION_ERROR": "Ett fel inträffade när bilden skulle konverteras",
+        "IMAGE_TOO_LARGE": "Bilden är för stor",
+        "IMAGE_TOO_SMALL": "Bilden är för liten",
+        "IMAGE_STORAGE_ERROR": "Ett fel inträffade när bilden skulle sparas",
+        "UNKNOWN_ERROR": "Ett okänt fel inträffade"
+    }
+}

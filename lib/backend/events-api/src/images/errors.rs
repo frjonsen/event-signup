@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use axum::http;
 
-use crate::model::rest::RestError;
+use crate::model::rest::{error_codes, RestError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ImageUploadError {
@@ -26,52 +26,52 @@ pub enum ImageUploadError {
     StorageError,
 }
 
-impl Into<RestError> for ImageUploadError {
-    fn into(self) -> RestError {
-        match self {
+impl From<ImageUploadError> for RestError {
+    fn from(val: ImageUploadError) -> Self {
+        match val {
             ImageUploadError::InvalidImage => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "INVALID_IMAGE".to_string(),
+                error_code: error_codes::INVALID_IMAGE.to_string(),
                 error_params: None,
             },
             ImageUploadError::UnsupportedImageFormat { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "UNSUPPORTED_IMAGE_FORMAT".to_string(),
+                error_code: error_codes::UNSUPPORTED_IMAGE_FORMAT.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ImageDecodingError { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "IMAGE_DECODING_ERROR".to_string(),
+                error_code: error_codes::IMAGE_CONVERSION_ERROR.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ImageEncodingError { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "IMAGE_ENCODING_ERROR".to_string(),
+                error_code: error_codes::IMAGE_CONVERSION_ERROR.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ImageTypeGuessError { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "IMAGE_TYPE_GUESS_ERROR".to_string(),
+                error_code: error_codes::IMAGE_CONVERSION_ERROR.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ImageTooLarge { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "IMAGE_TOO_LARGE".to_string(),
+                error_code: error_codes::IMAGE_TOO_LARGE.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ReadError { image_name } => RestError {
                 status_code: http::StatusCode::INTERNAL_SERVER_ERROR,
-                error_code: "IMAGE_READ_ERROR".to_string(),
+                error_code: error_codes::IMAGE_UPLOAD_FAILED.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::ImageTooSmall { image_name } => RestError {
                 status_code: http::StatusCode::BAD_REQUEST,
-                error_code: "IMAGE_TOO_SMALL".to_string(),
+                error_code: error_codes::IMAGE_TOO_SMALL.to_string(),
                 error_params: Some(HashMap::from([("image_name".to_string(), image_name)])),
             },
             ImageUploadError::StorageError => RestError {
                 status_code: http::StatusCode::INTERNAL_SERVER_ERROR,
-                error_code: "STORAGE_ERROR".to_string(),
+                error_code: error_codes::IMAGE_STORAGE_ERROR.to_string(),
                 error_params: None,
             },
         }

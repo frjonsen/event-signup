@@ -9,6 +9,7 @@ use tracing_subscriber::fmt::format;
 
 mod api;
 mod configuration;
+mod events;
 mod images;
 mod model;
 

@@ -5,11 +5,11 @@ use axum::{response::IntoResponse, Json};
 use serde::Serialize;
 use uuid::Uuid;
 
-use super::{
+use crate::model::database::{
     errors::ModelError,
     util::{
         get_datetime, get_delimited, get_delimited_datetime, get_field, get_list,
-        get_nested_object, get_optional_field,
+        get_nested_object, get_nested_optional_object, get_optional_datetime, get_optional_field,
     },
 };
 
@@ -22,16 +22,27 @@ mod fields {
     pub const PARTICIPANT_LIMIT: &str = "ParticipantLimit";
     pub const CONTACT: &str = "Contact";
     pub const SIGNUP_END_DATE: &str = "SignupEndDate";
-    pub const PHOTO_ID: &str = "PhotoId";
+    pub const PHOTOES: &str = "Photoes";
+    pub const LOCATION: &str = "Location";
+    pub const MEETUP_LOCATION: &str = "MeetupLocation";
+    pub const MEETUP_TIME: &str = "MeetupTime";
 }
 
 #[derive(serde::Deserialize, Serialize)]
 pub struct Contact {
+    organizer: Option<String>,
     email: String,
     phone: String,
 }
 
+#[derive(serde::Deserialize, Serialize)]
+pub struct Location {
+    name: String,
+    link: String,
+}
+
 #[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Event {
     id: Uuid,
     title: HashMap<String, String>,
@@ -39,11 +50,14 @@ pub struct Event {
     signup_end_date: time::OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
     event_date: time::OffsetDateTime,
+    meetup_time: Option<time::OffsetDateTime>,
+    meetup_location: Option<Location>,
     admin_id: String,
+    location: Location,
     contact: Contact,
     description: HashMap<String, String>,
     limit: Option<u16>,
-    photo_id: Vec<Uuid>,
+    photoes: Vec<Uuid>,
 }
 
 impl IntoResponse for Event {
@@ -66,7 +80,10 @@ impl TryFrom<&HashMap<String, AttributeValue>> for Event {
             title: get_nested_object(item, fields::TITLE)?,
             limit: get_optional_field(item, fields::PARTICIPANT_LIMIT, ScalarAttributeType::N)?,
             contact: get_nested_object(item, fields::CONTACT)?,
-            photo_id: get_list(item, fields::PHOTO_ID)?,
+            location: get_nested_object(item, fields::LOCATION)?,
+            photoes: get_list(item, fields::PHOTOES)?,
+            meetup_location: get_nested_optional_object(item, fields::MEETUP_LOCATION)?,
+            meetup_time: get_optional_datetime(item, fields::MEETUP_TIME)?,
         })
     }
 }
