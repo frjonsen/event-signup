@@ -3,9 +3,11 @@ import { UserPool } from "./user-pool";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as ssm from "aws-cdk-lib/aws-ssm";
+import { Domain } from "../domain";
 
 export class Authentication extends Construct {
   public readonly userPool: UserPool;
+  public readonly client: cognito.UserPoolClient;
   constructor(scope: Construct) {
     super(scope, "Authentication");
     this.userPool = new UserPool(this);
@@ -22,6 +24,15 @@ export class Authentication extends Construct {
       scopes: ["email"],
       attributeMapping: {
         email: cognito.ProviderAttribute.GOOGLE_EMAIL,
+      },
+    });
+
+    this.client = new cognito.UserPoolClient(this, "UserPoolClient", {
+      userPool: this.userPool,
+      authFlows: {},
+      oAuth: {
+        callbackUrls: [`https://${Domain.EVENTS_DOMAIN}`],
+        scopes: [cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
       },
     });
   }

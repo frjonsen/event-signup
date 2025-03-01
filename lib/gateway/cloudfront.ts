@@ -54,6 +54,7 @@ export class Cloudfront extends Construct {
         allowedMethods: cf.AllowedMethods.ALLOW_ALL,
         originRequestPolicy: originPolicy,
         origin: frontendOrigin,
+        cachePolicy: cf.CachePolicy.CACHING_DISABLED,
         edgeLambdas: [
           {
             eventType: cf.LambdaEdgeEventType.VIEWER_REQUEST,
@@ -62,13 +63,12 @@ export class Cloudfront extends Construct {
         ],
       },
       defaultRootObject: "index.html",
-      additionalBehaviors: {
-        "index.html": {
-          viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          origin: frontendOrigin,
-          cachePolicy: cf.CachePolicy.CACHING_DISABLED,
-        },
-      },
+    });
+
+    this.distribution.addBehavior("/assets/*", frontendOrigin, {
+      originRequestPolicy: originPolicy,
+      allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD,
+      viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     });
 
     this.distribution.addBehavior("/api/*", apiOrigin, {

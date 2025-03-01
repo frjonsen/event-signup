@@ -1,3 +1,4 @@
+use time::format_description;
 use tracing::{error, info};
 
 use crate::{
@@ -5,9 +6,43 @@ use crate::{
     model::database::errors::{DatabaseQueryFailed, UnknownSdkError},
 };
 
-use super::{errors::GetEventError, models::Event};
+use super::{
+    errors::{AddImagesError, GetEventError},
+    models::{fields::PHOTOES, Event},
+};
 
-async fn get_event(
+pub async fn add_images_to_event(
+    dynamodb: &aws_sdk_dynamodb::Client,
+    event_id: &uuid::Uuid,
+    image_ids: &[uuid::Uuid],
+) -> Result<(), AddImagesError> {
+    let event = get_event(dynamodb, event_id).await?;
+    let key = event.id_as_pk();
+    let sort_key = event.event_date_as_sk();
+    let set_additions = aws_sdk_dynamodb::types::AttributeValue::Ss(
+        image_ids.iter().map(|id| id.to_string()).collect(),
+    );
+
+    dynamodb
+        .update_item()
+        .table_name(&*EVENT_TABLE)
+        .key("PK", aws_sdk_dynamodb::types::AttributeValue::S(key))
+        .key("SK", aws_sdk_dynamodb::types::AttributeValue::S(sort_key))
+        .update_expression("ADD #P :images")
+        .expression_attribute_names("#P", PHOTOES)
+        .expression_attribute_values(":images", set_additions)
+        .send()
+        .await
+        .map_err(|s| {
+            error!("Failed to query database: {s:?}");
+            sentry::capture_error(&s);
+            AddImagesError::from(DatabaseQueryFailed)
+        })?;
+
+    Ok(())
+}
+
+pub async fn get_event(
     dynamodb: &aws_sdk_dynamodb::Client,
     event_id: &uuid::Uuid,
 ) -> Result<Event, GetEventError> {
@@ -48,5 +83,21 @@ async fn get_event(
             sentry::capture_error(&e);
             Err(GetEventError::InvalidStoredEvent(event_id.clone()))
         }
+    }
+}
+
+impl Event {
+    fn id_as_pk(&self) -> String {
+        format!("Event#{}", self.id)
+    }
+
+    fn event_date_as_sk(&self) -> String {
+        let format_description =
+            format_description::parse("[year]-[month]-[day]T[hour]:[minute]:[second]Z")
+                .expect("Invalid format description");
+        format!(
+            "EventDate#{}",
+            self.event_date.format(&format_description).unwrap()
+        )
     }
 }

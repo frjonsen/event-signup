@@ -32,10 +32,24 @@ interface Event {
     eventDate: Date;
     meetupTime: Date | undefined;
     meetupLocation: Location | undefined;
+    visible: boolean;
+}
+
+function renderEventImages(event: Event): JSX.Element{
+    const firstImage = event.photoes.length > 0 ? event.photoes[0] : null;
+    if (firstImage === null) {
+        return <></>;
+    }
+
+    let url = `/static/events/${event.id}/${firstImage}.avif`;
+    if (window.location.hostname === "localhost") {
+        url = `https://events.jonsen.se${url}`;
+    }
+    return <img className="eventImage" src={url} alt="Picture from event location" />;
+
 }
 
 function renderEvent(event: Event, translator: i18n): JSX.Element {
-    console.log("Rendering event", event);
     // Clone translator so we don't pollute the global resources with temporary resources
     const eventTranslator = translator.cloneInstance();
 
@@ -44,16 +58,18 @@ function renderEvent(event: Event, translator: i18n): JSX.Element {
         eventTranslator.addResource(key, "translation", "description", event.description[key]);
     });
 
+    console.log(eventTranslator.getResource("en", "translation", "location"))
+
     return (
         <div>
+            {renderEventImages(event)}
             <h1>{eventTranslator.t("title")}</h1>
-            <p>{eventTranslator.languages}</p>
-            <p><span role="img" aria-label="British Flag">🇬🇧</span></p>
             <p>{eventTranslator.t("description")}</p>
-            <p><i className="fi fi-rr-map-marker"></i><a href={event.location.link}>{event.location.name}</a></p>
-            <p>{event.contact.email}</p>
-            <p>{event.contact.phone}</p>
-            <p>{event.limit}</p>
+            <p>📅 {event.eventDate.toLocaleString("sv-SE",  { year: "numeric" })}</p>
+            <p>📍 <a href={event.location.link}>{event.location.name}</a></p>
+            <p>✉ {event.contact.email}</p>
+            <p>📞 {event.contact.phone}</p>
+            <p>👥 {event.limit}</p>
         </div>
     )
 }

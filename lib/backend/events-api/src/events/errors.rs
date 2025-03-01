@@ -11,3 +11,13 @@ pub enum GetEventError {
     #[error(transparent)]
     UnexpectedSdkError(#[from] UnknownSdkError),
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum AddImagesError {
+    #[error(transparent)]
+    DatabaseQueryFailed(#[from] DatabaseQueryFailed),
+    #[error(transparent)]
+    UnexpectedSdkError(#[from] UnknownSdkError),
+    #[error(transparent)]
+    GetEventError(#[from] GetEventError),
+}

@@ -7,7 +7,6 @@ import { EventTable } from "./event-table";
 import { ApiGateway } from "../gateway/api-gateway";
 import { EventImageStorage } from "./event-image-storage";
 import { Authentication } from "../authentication/authentication";
-import { CognitoUserPoolsAuthorizer } from "aws-cdk-lib/aws-apigateway";
 import { HttpUserPoolAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 
 export interface BackendProps {
@@ -20,6 +19,7 @@ export class Backend extends Construct {
   constructor(scope: Construct, props: BackendProps) {
     super(scope, "Backend");
     const images = new EventImageStorage(this);
+    props.gateway.cloudFront.addS3Origin("/static/*", images);
     const eventTable = new EventTable(this);
     const apiLambda = new ApiLambda(this, "ApiLambda", {
       sentry: props.sentry,
@@ -36,6 +36,9 @@ export class Backend extends Construct {
     const adminAuthorizer = new HttpUserPoolAuthorizer(
       "EventCreatorAuthorizer",
       props.authentication.userPool,
+      {
+        userPoolClients: [props.authentication.client],
+      },
     );
 
     const apiIntegration = new integrations.HttpLambdaIntegration(

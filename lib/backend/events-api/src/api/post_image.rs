@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::{
     configuration::{EVENT_IMAGES_BUCKET_NAME, EVENT_IMAGES_BUCKET_PREFIX},
+    events::queries::add_images_to_event,
     images::{
         conform_image, errors::ImageUploadError, is_image_too_small, is_image_within_bounds,
         ImageType,
@@ -153,6 +154,12 @@ pub async fn post_image(
             .map_err(|e| RestError::from(e))?;
         info!("Uploaded image with id {}", image_id);
         image_ids.push(image_id);
+    }
+
+    let res = add_images_to_event(&dynamodb, &event_id, &image_ids).await;
+
+    if let Err(e) = res {
+        return Err(e.into());
     }
 
     Ok(PostImagesResponse {

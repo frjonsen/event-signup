@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use axum::{http::StatusCode, response::IntoResponse, Json};
 
 use crate::{
-    events::errors::GetEventError,
+    events::errors::{AddImagesError, GetEventError},
     model::database::errors::{DatabaseQueryFailed, UnknownSdkError},
 };
 
@@ -80,6 +80,16 @@ impl From<GetEventError> for RestError {
             },
             GetEventError::DatabaseQueryFailed(e) => e.into(),
             GetEventError::UnexpectedSdkError(e) => e.into(),
+        }
+    }
+}
+
+impl From<AddImagesError> for RestError {
+    fn from(val: AddImagesError) -> Self {
+        match val {
+            AddImagesError::DatabaseQueryFailed(e) => e.into(),
+            AddImagesError::UnexpectedSdkError(e) => e.into(),
+            AddImagesError::GetEventError(e) => e.into(),
         }
     }
 }

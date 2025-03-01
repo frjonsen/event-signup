@@ -1,6 +1,7 @@
 {
     "events": "Evenemang",
     "loading": "Laddar",
+    "location": "Plats",
     "backend": {
         "UNEXPECTED_SERVER_ERROR": "Ett oväntat serverfel inträffade",
         "EVENT_NOT_FOUND": "Evenemanget hittades inte",

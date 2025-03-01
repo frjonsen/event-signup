@@ -16,6 +16,17 @@ fn get_string_internal<'a>(
         .map_err(|_| ModelError::InvalidData(format!("{field} field is not a string")))
 }
 
+pub fn get_boolean(
+    item: &HashMap<String, AttributeValue>,
+    field: &str,
+) -> Result<bool, ModelError> {
+    item.get(field)
+        .ok_or_else(|| ModelError::MissingField(field.to_owned()))?
+        .as_bool()
+        .map_err(|_| ModelError::InvalidData(format!("{field} is not a bool")))
+        .map(bool::clone)
+}
+
 pub fn get_field<T>(item: &HashMap<String, AttributeValue>, field: &str) -> Result<T, ModelError>
 where
     T: FromStr,

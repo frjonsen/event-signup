@@ -8,12 +8,12 @@ use uuid::Uuid;
 use crate::model::database::{
     errors::ModelError,
     util::{
-        get_datetime, get_delimited, get_delimited_datetime, get_field, get_list,
+        get_boolean, get_datetime, get_delimited, get_delimited_datetime, get_field, get_list,
         get_nested_object, get_nested_optional_object, get_optional_datetime, get_optional_field,
     },
 };
 
-mod fields {
+pub mod fields {
     pub const ID: &str = "PK";
     pub const EVENT_DATE: &str = "SK";
     pub const EVENT_CREATOR: &str = "EventCreator";
@@ -26,6 +26,7 @@ mod fields {
     pub const LOCATION: &str = "Location";
     pub const MEETUP_LOCATION: &str = "MeetupLocation";
     pub const MEETUP_TIME: &str = "MeetupTime";
+    pub const VISIBLE: &str = "Visible";
 }
 
 #[derive(serde::Deserialize, Serialize)]
@@ -44,20 +45,21 @@ pub struct Location {
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
-    id: Uuid,
-    title: HashMap<String, String>,
+    pub id: Uuid,
+    pub title: HashMap<String, String>,
     #[serde(with = "time::serde::rfc3339")]
-    signup_end_date: time::OffsetDateTime,
+    pub signup_end_date: time::OffsetDateTime,
     #[serde(with = "time::serde::rfc3339")]
-    event_date: time::OffsetDateTime,
-    meetup_time: Option<time::OffsetDateTime>,
-    meetup_location: Option<Location>,
-    admin_id: String,
-    location: Location,
-    contact: Contact,
-    description: HashMap<String, String>,
-    limit: Option<u16>,
-    photoes: Vec<Uuid>,
+    pub event_date: time::OffsetDateTime,
+    pub meetup_time: Option<time::OffsetDateTime>,
+    pub meetup_location: Option<Location>,
+    pub admin_id: String,
+    pub location: Location,
+    pub contact: Contact,
+    pub description: HashMap<String, String>,
+    pub limit: Option<u16>,
+    pub photoes: Vec<Uuid>,
+    pub visible: bool,
 }
 
 impl IntoResponse for Event {
@@ -84,6 +86,7 @@ impl TryFrom<&HashMap<String, AttributeValue>> for Event {
             photoes: get_list(item, fields::PHOTOES)?,
             meetup_location: get_nested_optional_object(item, fields::MEETUP_LOCATION)?,
             meetup_time: get_optional_datetime(item, fields::MEETUP_TIME)?,
+            visible: get_boolean(item, fields::VISIBLE)?,
         })
     }
 }
