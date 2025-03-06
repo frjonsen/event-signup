@@ -30,15 +30,15 @@ export class Cloudfront extends Construct {
       "amazonaws.com",
     ]);
 
-    const originPolicy = new cf.OriginRequestPolicy(this, "OriginPolicy", {
-      headerBehavior: cf.OriginRequestHeaderBehavior.allowList(
-        "access-control-request-method",
-        "origin",
-        "user-agent",
-        "sentry-trace",
-      ),
-      queryStringBehavior: cf.OriginRequestQueryStringBehavior.all(),
-    });
+    // const originPolicy = new cf.OriginRequestPolicy(this, "OriginPolicy", {
+    //   headerBehavior: cf.OriginRequestHeaderBehavior.allowList(
+    //     "access-control-request-method",
+    //     "origin",
+    //     "user-agent",
+    //     "sentry-trace",
+    //   ),
+    //   queryStringBehavior: cf.OriginRequestQueryStringBehavior.all(),
+    // });
 
     const apiOrigin = new origins.HttpOrigin(origin);
     const frontendOrigin = origins.S3BucketOrigin.withOriginAccessControl(
@@ -52,7 +52,8 @@ export class Cloudfront extends Construct {
       defaultBehavior: {
         viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         allowedMethods: cf.AllowedMethods.ALLOW_ALL,
-        originRequestPolicy: originPolicy,
+        originRequestPolicy:
+          cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         origin: frontendOrigin,
         cachePolicy: cf.CachePolicy.CACHING_DISABLED,
         edgeLambdas: [
@@ -66,14 +67,14 @@ export class Cloudfront extends Construct {
     });
 
     this.distribution.addBehavior("/assets/*", frontendOrigin, {
-      originRequestPolicy: originPolicy,
+      originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       allowedMethods: cf.AllowedMethods.ALLOW_GET_HEAD,
       viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     });
 
     this.distribution.addBehavior("/api/*", apiOrigin, {
       cachePolicy: cf.CachePolicy.CACHING_DISABLED,
-      originRequestPolicy: originPolicy,
+      originRequestPolicy: cf.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       allowedMethods: cf.AllowedMethods.ALLOW_ALL,
       viewerProtocolPolicy: cf.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     });

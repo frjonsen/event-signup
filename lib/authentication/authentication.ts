@@ -1,9 +1,10 @@
 import { Construct } from "constructs";
 import { UserPool } from "./user-pool";
 import * as cognito from "aws-cdk-lib/aws-cognito";
-import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
-import * as ssm from "aws-cdk-lib/aws-ssm";
 import { Domain } from "../domain";
+import { Duration } from "aws-cdk-lib";
+import * as ssm from "aws-cdk-lib/aws-ssm";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 
 export class Authentication extends Construct {
   public readonly userPool: UserPool;
@@ -29,9 +30,18 @@ export class Authentication extends Construct {
 
     this.client = new cognito.UserPoolClient(this, "UserPoolClient", {
       userPool: this.userPool,
-      authFlows: {},
+      authFlows: {
+        user: true,
+      },
+      supportedIdentityProviders: [
+        cognito.UserPoolClientIdentityProvider.GOOGLE,
+      ],
+      refreshTokenValidity: Duration.days(60),
       oAuth: {
-        callbackUrls: [`https://${Domain.EVENTS_DOMAIN}`],
+        callbackUrls: [
+          `https://${Domain.EVENTS_DOMAIN}`,
+          "http://localhost:5173",
+        ],
         scopes: [cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE],
       },
     });

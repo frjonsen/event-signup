@@ -5,6 +5,7 @@ import { Construct } from "constructs";
 import { Sentry } from "../sentry";
 import { EventTable } from "./event-table";
 import { EventImageStorage } from "./event-image-storage";
+import { UserPool } from "../authentication/user-pool";
 
 export interface ApiLambdaProps {
   sentry: Sentry;
@@ -24,6 +25,7 @@ export class ApiLambda extends RustFunction {
         assetHashType: AssetHashType.SOURCE,
       },
       environment: {
+        CONTENT_CREATORS_GROUP_NAME: UserPool.CONTENT_CREATORS_GROUP_NAME,
         SENTRY_DSN: props.sentry.backendDsn.stringValue,
         EVENT_TABLE_ARN: props.eventTable.tableArn,
         EVENT_IMAGES_BUCKET_NAME: props.images.bucketName,

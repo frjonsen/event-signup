@@ -13,6 +13,7 @@ export interface BackendProps {
   gateway: ApiGateway;
   sentry: Sentry;
   authentication: Authentication;
+  database: EventTable;
 }
 
 export class Backend extends Construct {
@@ -20,15 +21,14 @@ export class Backend extends Construct {
     super(scope, "Backend");
     const images = new EventImageStorage(this);
     props.gateway.cloudFront.addS3Origin("/static/*", images);
-    const eventTable = new EventTable(this);
     const apiLambda = new ApiLambda(this, "ApiLambda", {
       sentry: props.sentry,
-      eventTable,
+      eventTable: props.database,
       images,
     });
     const imageUploadLambda = new ApiLambda(this, "ImageUploadLambda", {
       sentry: props.sentry,
-      eventTable,
+      eventTable: props.database,
       images,
       memory: 2048,
     });

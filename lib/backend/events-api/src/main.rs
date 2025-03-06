@@ -1,6 +1,8 @@
 use api::get_event::get_event;
+use authentication::content_creator_authorizer_middleware;
 use axum::{
     extract::{DefaultBodyLimit, FromRef},
+    middleware,
     routing::{get, post},
     Router,
 };
@@ -8,6 +10,7 @@ use lambda_http::{run, Error};
 use tracing_subscriber::fmt::format;
 
 mod api;
+mod authentication;
 mod configuration;
 mod events;
 mod images;
@@ -52,7 +55,8 @@ async fn real_main() -> Result<(), Error> {
     let admin_api = Router::new()
         .route("/event/{eventId}/images", post(api::post_image::post_image))
         // 10 mb limit for images
-        .layer(DefaultBodyLimit::disable());
+        .layer(DefaultBodyLimit::disable())
+        .route_layer(middleware::from_fn(content_creator_authorizer_middleware));
 
     let app = Router::new()
         .nest("/api/public", public_router)

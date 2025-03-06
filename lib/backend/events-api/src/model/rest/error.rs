@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use axum::{http::StatusCode, response::IntoResponse, Json};
 
 use crate::{
+    authentication::AuthError,
     events::errors::{AddImagesError, GetEventError},
     model::database::errors::{DatabaseQueryFailed, UnknownSdkError},
 };
@@ -90,6 +91,16 @@ impl From<AddImagesError> for RestError {
             AddImagesError::DatabaseQueryFailed(e) => e.into(),
             AddImagesError::UnexpectedSdkError(e) => e.into(),
             AddImagesError::GetEventError(e) => e.into(),
+        }
+    }
+}
+
+impl From<AuthError> for RestError {
+    fn from(_val: AuthError) -> Self {
+        RestError {
+            status_code: StatusCode::UNAUTHORIZED,
+            error_code: "UNAUTHORIZED".to_string(),
+            error_params: None,
         }
     }
 }

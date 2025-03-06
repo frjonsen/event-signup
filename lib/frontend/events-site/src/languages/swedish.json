@@ -2,6 +2,7 @@
     "events": "Evenemang",
     "loading": "Laddar",
     "location": "Plats",
+    "signIn": "Logga in",
     "backend": {
         "UNEXPECTED_SERVER_ERROR": "Ett oväntat serverfel inträffade",
         "EVENT_NOT_FOUND": "Evenemanget hittades inte",

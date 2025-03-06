@@ -1,12 +1,20 @@
 import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
-import "@flaticon/flaticon-uicons/css/all/all.css"
 import App from './App.tsx'
 import Event from './event/Event.tsx'
 import { BrowserRouter, createRoutesFromChildren, matchRoutes, Route, Routes, useLocation, useNavigationType } from 'react-router';
 import "./i18next.tsx";
 import * as Sentry from "@sentry/react";
+import { AuthProvider } from "react-oidc-context";
+import { createTheme, ThemeProvider, CssBaseline } from '@mui/material';
+
+const cognitoAuthConfig = {
+  authority: "https://cognito-idp.eu-north-1.amazonaws.com/eu-north-1_1i9kY1Vzh",
+  client_id: "6o33hc2kve1cli1nffqpf1f43e",
+  redirect_uri: "http://localhost:5173",
+  response_type: "code",
+  scope: "email openid profile",
+}
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -29,14 +37,25 @@ const root = createRoot(document.getElementById('root')!, {
   onRecoverableError: Sentry.reactErrorHandler(),
 });
 
+const theme = createTheme({
+  colorSchemes: {
+    dark: true
+  }
+})
+
 const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 root.render(
   <StrictMode>
-      <BrowserRouter>
-        <SentryRoutes>
-          <Route index element={<App />} />
-          <Route path="event/:id" element={<Event />} />
-        </SentryRoutes>
-      </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider {...cognitoAuthConfig}>
+        <BrowserRouter>
+          <SentryRoutes>
+            <Route index element={<App />} />
+            <Route path="event/:id" element={<Event />} />
+          </SentryRoutes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

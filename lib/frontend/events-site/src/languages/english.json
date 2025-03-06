@@ -2,6 +2,7 @@
     "events": "Events",
     "loading": "Loading",
     "location": "Location",
+    "signIn": "Sign in",
     "backend": {
         "UNEXPECTED_SERVER_ERROR": "An unexpected server error occurred",
         "EVENT_NOT_FOUND": "Event not found",

@@ -24,6 +24,7 @@ export class SignupsStack extends cdk.Stack {
       },
     });
 
+    const eventTable = new EventTable(this);
     const frontend = new Frontend(this);
     const authentication = new Authentication(this);
     const sentry = new Sentry(this);
@@ -37,6 +38,7 @@ export class SignupsStack extends cdk.Stack {
       gateway,
       sentry,
       authentication,
+      database: eventTable,
     });
   }
 }
