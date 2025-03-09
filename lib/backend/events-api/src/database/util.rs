@@ -38,32 +38,6 @@ where
     Ok(parsed_value)
 }
 
-pub fn get_list<T>(
-    item: &HashMap<String, AttributeValue>,
-    field: &str,
-) -> Result<Vec<T>, ModelError>
-where
-    T: FromStr,
-{
-    let read_value = match item.get(field) {
-        None => return Ok(Vec::new()),
-        Some(f) => f,
-    }
-    .as_ss()
-    .map_err(|_| ModelError::InvalidData(format!("{field} is not a string list")))?;
-
-    let mut parsed_values = Vec::new();
-    for value in read_value.into_iter() {
-        parsed_values.push(
-            value
-                .parse()
-                .map_err(|_| ModelError::InvalidGenericType(field.to_owned(), value.to_owned()))?,
-        );
-    }
-
-    Ok(parsed_values)
-}
-
 pub fn get_optional_field<T>(
     item: &HashMap<String, AttributeValue>,
     field: &str,
@@ -129,35 +103,6 @@ pub fn get_datetime(
     field: &str,
 ) -> Result<OffsetDateTime, ModelError> {
     let read_field = get_string_internal(item, field)?;
-    OffsetDateTime::parse(read_field, &time::format_description::well_known::Rfc3339).map_err(
-        |_| {
-            ModelError::InvalidType(
-                field.to_owned(),
-                "Rfc3339".to_owned(),
-                read_field.to_owned(),
-            )
-        },
-    )
-}
-
-pub fn get_optional_datetime(
-    item: &HashMap<String, AttributeValue>,
-    field: &str,
-) -> Result<Option<OffsetDateTime>, ModelError> {
-    if !item.contains_key(field) {
-        return Ok(None);
-    }
-    get_datetime(item, field).map(Some)
-}
-
-pub fn get_delimited_datetime(
-    item: &HashMap<String, AttributeValue>,
-    field: &str,
-) -> Result<OffsetDateTime, ModelError> {
-    let read_field = get_string_internal(item, field)?
-        .split("#")
-        .last()
-        .ok_or_else(|| ModelError::MissingDelimiter(field.to_owned()))?;
     OffsetDateTime::parse(read_field, &time::format_description::well_known::Rfc3339).map_err(
         |_| {
             ModelError::InvalidType(

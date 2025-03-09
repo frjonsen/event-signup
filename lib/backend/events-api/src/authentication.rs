@@ -33,6 +33,7 @@ impl IntoResponse for AuthError {
 pub struct Claims {
     #[serde(rename = "cognito:groups")]
     pub groups: Vec<String>,
+    pub username: String,
 }
 
 impl<S> FromRequestParts<S> for Claims

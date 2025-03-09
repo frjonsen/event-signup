@@ -21,6 +21,10 @@ pub struct RestErrorBody {
     pub error_params: Option<HashMap<String, String>>,
 }
 
+#[derive(thiserror::Error, Debug)]
+#[error("Not event owner")]
+pub struct NotEventOwnerError;
+
 impl IntoResponse for RestError {
     fn into_response(self) -> axum::response::Response {
         (
@@ -43,6 +47,16 @@ impl Into<(StatusCode, RestErrorBody)> for RestError {
                 error_params: self.error_params,
             },
         )
+    }
+}
+
+impl From<NotEventOwnerError> for RestError {
+    fn from(_val: NotEventOwnerError) -> Self {
+        RestError {
+            status_code: StatusCode::NOT_FOUND,
+            error_code: error_codes::EVENT_NOT_FOUND.to_string(),
+            error_params: None,
+        }
     }
 }
 

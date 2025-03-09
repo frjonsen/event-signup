@@ -6,6 +6,8 @@ use axum::{
     routing::{get, put},
     Router,
 };
+use configuration::EVENT_TABLE;
+use events::queries::DynamodbQueries;
 use lambda_http::{run, Error};
 use tracing_subscriber::{fmt::format, EnvFilter};
 
@@ -18,13 +20,13 @@ mod images;
 
 #[derive(Clone)]
 struct ApiState {
-    dynamodb_client: aws_sdk_dynamodb::Client,
+    dynamodb_queries: events::queries::DynamodbQueries,
     s3_client: aws_sdk_s3::Client,
 }
 
-impl FromRef<ApiState> for aws_sdk_dynamodb::Client {
-    fn from_ref(state: &ApiState) -> aws_sdk_dynamodb::Client {
-        state.dynamodb_client.clone()
+impl FromRef<ApiState> for DynamodbQueries {
+    fn from_ref(state: &ApiState) -> DynamodbQueries {
+        state.dynamodb_queries.clone()
     }
 }
 
@@ -44,10 +46,12 @@ fn setup_logging() {
 async fn real_main() -> Result<(), Error> {
     let config = aws_config::load_from_env().await;
     let dynamodb_client = aws_sdk_dynamodb::Client::new(&config);
+    let dynamodb_queries =
+        events::queries::DynamodbQueries::new(dynamodb_client.clone(), &EVENT_TABLE);
     let s3_client = aws_sdk_s3::Client::new(&config);
 
     let state = ApiState {
-        dynamodb_client,
+        dynamodb_queries,
         s3_client,
     };
 

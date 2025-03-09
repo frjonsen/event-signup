@@ -1,4 +1,4 @@
-use crate::events::queries;
+use crate::events::queries::DynamodbQueries;
 use axum::extract::{Path, State};
 use uuid::Uuid;
 
@@ -77,10 +77,11 @@ impl From<crate::events::models::Event> for Event {
 }
 pub async fn get_event(
     Path(event_id): Path<Uuid>,
-    State(dynamodb): State<aws_sdk_dynamodb::Client>,
+    State(dynamodb): State<DynamodbQueries>,
 ) -> Result<Event, RestError> {
     tracing::debug!("Getting event with id: {}", event_id);
-    let event = queries::get_event(&dynamodb, event_id)
+    let event = dynamodb
+        .get_event(event_id)
         .await
         .map_err(|e| RestError::from(e))
         .map(|event| {

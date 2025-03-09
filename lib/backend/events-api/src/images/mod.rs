@@ -13,35 +13,6 @@ pub mod errors;
 const MAX_IMAGE_DIMENSION: u32 = 1280;
 const MIN_IMAGE_DIMENSION: u32 = 800;
 
-#[derive(Debug, PartialEq)]
-pub enum ImageType {
-    Jpeg,
-    Png,
-    Avif,
-}
-
-impl std::fmt::Display for ImageType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ImageType::Jpeg => write!(f, "image/jpeg"),
-            ImageType::Png => write!(f, "image/png"),
-            ImageType::Avif => write!(f, "image/avif"),
-        }
-    }
-}
-
-impl TryFrom<&str> for ImageType {
-    type Error = ImageUploadError;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "image/jpeg" => Ok(ImageType::Jpeg),
-            "image/png" => Ok(ImageType::Png),
-            "image/avif" => Ok(ImageType::Avif),
-            _ => Err(ImageUploadError::UnsupportedImageFormat {}),
-        }
-    }
-}
 pub fn is_image_within_bounds(image: &DynamicImage) -> bool {
     let size = image.dimensions();
     size.0 < MAX_IMAGE_DIMENSION && size.1 < MAX_IMAGE_DIMENSION
@@ -114,4 +85,20 @@ pub async fn upload_image(
         })?;
 
     Ok(new_image_id)
+}
+
+#[cfg(test)]
+mod tests {
+    use rstest::rstest;
+
+    use crate::images::MIN_IMAGE_DIMENSION;
+
+    #[rstest]
+    #[case(MIN_IMAGE_DIMENSION as i32, (MIN_IMAGE_DIMENSION as i32) - 1i32)]
+    #[case(MIN_IMAGE_DIMENSION as i32 - 1, MIN_IMAGE_DIMENSION as i32)]
+    #[case(MIN_IMAGE_DIMENSION as i32 - 1, MIN_IMAGE_DIMENSION as i32 - 1)]
+    fn test_is_image_too_small(#[case] height: i32, #[case] width: i32) {
+        let image = image::DynamicImage::new_rgb8(height as u32, width as u32);
+        assert!(super::is_image_too_small(&image));
+    }
 }

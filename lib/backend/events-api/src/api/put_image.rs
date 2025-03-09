@@ -11,11 +11,12 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::{
-    events::queries::add_image_to_event,
+    authentication::Claims,
+    events::queries::DynamodbQueries,
     images::{conform_image, errors::ImageUploadError, is_image_too_small, upload_image},
 };
 
-use super::error::RestError;
+use super::error::{NotEventOwnerError, RestError};
 
 const MAX_IMAGE_SIZE: usize = 1024 * 1024 * 10;
 
@@ -53,11 +54,18 @@ fn get_image_from_body(body: Bytes) -> Result<image::DynamicImage, ImageUploadEr
 
 pub async fn put_image(
     State(s3): State<aws_sdk_s3::Client>,
-    State(dynamodb): State<aws_sdk_dynamodb::Client>,
+    State(dynamodb): State<DynamodbQueries>,
     Path(event_id): Path<Uuid>,
+    claims: Claims,
     TypedHeader(content_type): TypedHeader<ContentType>,
     body: Bytes,
 ) -> Result<PutImageResponse, RestError> {
+    let event = dynamodb.get_event(event_id).await?;
+
+    if event.creator_username != claims.username {
+        return Err(NotEventOwnerError.into());
+    }
+
     if body.len() > MAX_IMAGE_SIZE {
         return Err(ImageUploadError::ImageTooLarge.into());
     }
@@ -72,7 +80,7 @@ pub async fn put_image(
 
     let conformed_image = conform_image(image).await?;
     let image_id = upload_image(&s3, event_id, conformed_image).await?;
-    add_image_to_event(&dynamodb, event_id, image_id).await?;
+    dynamodb.add_image_to_event(event_id, image_id).await?;
 
     Ok(PutImageResponse { image_id })
 }
