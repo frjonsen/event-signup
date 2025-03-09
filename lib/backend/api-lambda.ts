@@ -30,10 +30,11 @@ export class ApiLambda extends RustFunction {
         EVENT_TABLE_ARN: props.eventTable.tableArn,
         EVENT_IMAGES_BUCKET_NAME: props.images.bucketName,
         EVENT_IMAGES_BUCKET_PREFIX: "static/events",
+        RUST_LOG: "events_api=debug",
       },
     });
 
     props.images.grantWrite(this);
-    props.eventTable.grantReadWriteData(this);
+    props.eventTable.grantQuery(this.role!);
   }
 }

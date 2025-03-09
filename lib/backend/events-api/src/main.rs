@@ -3,18 +3,18 @@ use authentication::content_creator_authorizer_middleware;
 use axum::{
     extract::{DefaultBodyLimit, FromRef},
     middleware,
-    routing::{get, post},
+    routing::{get, put},
     Router,
 };
 use lambda_http::{run, Error};
-use tracing_subscriber::fmt::format;
+use tracing_subscriber::{fmt::format, EnvFilter};
 
 mod api;
 mod authentication;
 mod configuration;
+mod database;
 mod events;
 mod images;
-mod model;
 
 #[derive(Clone)]
 struct ApiState {
@@ -36,6 +36,7 @@ impl FromRef<ApiState> for aws_sdk_s3::Client {
 
 fn setup_logging() {
     tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
         .event_format(format::json().with_thread_ids(false).with_ansi(false))
         .init();
 }
@@ -53,7 +54,7 @@ async fn real_main() -> Result<(), Error> {
     let public_router = Router::new().route("/event/{eventId}", get(get_event));
 
     let admin_api = Router::new()
-        .route("/event/{eventId}/images", post(api::post_image::post_image))
+        .route("/event/{eventId}/image", put(api::put_image::put_image))
         // 10 mb limit for images
         .layer(DefaultBodyLimit::disable())
         .route_layer(middleware::from_fn(content_creator_authorizer_middleware));

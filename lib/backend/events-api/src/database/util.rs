@@ -106,19 +106,6 @@ where
     })
 }
 
-pub fn get_nested_optional_object<T>(
-    item: &HashMap<String, AttributeValue>,
-    field: &str,
-) -> Result<Option<T>, ModelError>
-where
-    T: DeserializeOwned,
-{
-    if !item.contains_key(field) {
-        return Ok(None);
-    }
-    get_nested_object(item, field).map(Some)
-}
-
 pub fn get_delimited<T>(
     item: &HashMap<String, AttributeValue>,
     field: &str,

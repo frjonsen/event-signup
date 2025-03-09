@@ -4,8 +4,8 @@ use axum::{http::StatusCode, response::IntoResponse, Json};
 
 use crate::{
     authentication::AuthError,
-    events::errors::{AddImagesError, GetEventError},
-    model::database::errors::{DatabaseQueryFailed, UnknownSdkError},
+    database::errors::{DatabaseQueryFailed, UnknownSdkError},
+    events::errors::{AddImageError, GetEventError},
 };
 
 pub struct RestError {
@@ -85,12 +85,12 @@ impl From<GetEventError> for RestError {
     }
 }
 
-impl From<AddImagesError> for RestError {
-    fn from(val: AddImagesError) -> Self {
+impl From<AddImageError> for RestError {
+    fn from(val: AddImageError) -> Self {
         match val {
-            AddImagesError::DatabaseQueryFailed(e) => e.into(),
-            AddImagesError::UnexpectedSdkError(e) => e.into(),
-            AddImagesError::GetEventError(e) => e.into(),
+            AddImageError::DatabaseQueryFailed(e) => e.into(),
+            AddImageError::UnexpectedSdkError(e) => e.into(),
+            AddImageError::GetEventError(e) => e.into(),
         }
     }
 }
@@ -108,8 +108,6 @@ impl From<AuthError> for RestError {
 pub mod error_codes {
     pub const UNEXPECTED_SERVER_ERROR: &str = "UNEXPECTED_SERVER_ERROR";
     pub const EVENT_NOT_FOUND: &str = "EVENT_NOT_FOUND";
-    pub const IMAGE_UPLOAD_FAILED: &str = "IMAGE_UPLOAD_FAILED";
-    pub const INVALID_IMAGE: &str = "INVALID_IMAGE";
     pub const UNSUPPORTED_IMAGE_FORMAT: &str = "UNSUPPORTED_IMAGE_FORMAT";
     pub const IMAGE_CONVERSION_ERROR: &str = "IMAGE_CONVERSION_ERROR";
     pub const IMAGE_TOO_LARGE: &str = "IMAGE_TOO_LARGE";

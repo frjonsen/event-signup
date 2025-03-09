@@ -59,8 +59,8 @@ export class Backend extends Construct {
     });
 
     props.gateway.httpApi.addRoutes({
-      path: "/api/admin/event/{eventId}/images",
-      methods: [agw.HttpMethod.POST],
+      path: "/api/admin/event/{eventId}/image",
+      methods: [agw.HttpMethod.PUT],
       integration: new integrations.HttpLambdaIntegration(
         "ImageUploadIntegration",
         imageUploadLambda,

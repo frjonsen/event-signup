@@ -1,2 +1,3 @@
+pub mod error;
 pub mod get_event;
-pub mod post_image;
+pub mod put_image;

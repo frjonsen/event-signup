@@ -1,6 +1,8 @@
 mod error;
+mod event;
 mod post_images_response;
 pub use error::*;
+pub use event::*;
 pub use post_images_response::*;
 
 use axum::{

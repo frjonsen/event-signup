@@ -10,8 +10,9 @@ import { handleRequestError } from "../error";
 
 interface Contact {
     organizer: string | undefined;
-    email: string;
-    phone: string;
+    email: string | undefined;
+    emailVisible: boolean;
+    phone: string | undefined;
 }
 
 interface Location {
@@ -22,26 +23,22 @@ interface Location {
 interface Event {
     id: string;
     title: Translation,
-    adminId: string;
-    contact: Contact;
-    location: Location;
-    description: Translation;
-    limit: number | undefined;
-    photoes: string[];
     signupEndDate: Date;
     eventDate: Date;
-    meetupTime: Date | undefined;
-    meetupLocation: Location | undefined;
+    location: Location;
+    contact: Contact;
+    description: Translation;
+    limit: number | undefined;
+    image: string | null;
     visible: boolean;
 }
 
 function renderEventImages(event: Event): JSX.Element{
-    const firstImage = event.photoes.length > 0 ? event.photoes[0] : null;
-    if (firstImage === null) {
+    if (event.image === null) {
         return <></>;
     }
 
-    let url = `/static/events/${event.id}/${firstImage}.avif`;
+    let url = `/static/events/${event.id}/${event.image}.avif`;
     if (window.location.hostname === "localhost") {
         url = `https://events.jonsen.se${url}`;
     }

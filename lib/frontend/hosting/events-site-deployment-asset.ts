@@ -24,6 +24,7 @@ export class EventsSiteDeploymentAsset extends Construct {
   bundle(): s3deploy.ISource {
     const path = "lib/frontend/events-site";
     return s3deploy.Source.asset(path, {
+      assetHashType: cdk.AssetHashType.SOURCE,
       bundling: {
         command: ["pnpm s3-bundle", "cp -r /asset-input/dist/* /asset-output"],
         image: cdk.DockerImage.fromRegistry("node:23"),

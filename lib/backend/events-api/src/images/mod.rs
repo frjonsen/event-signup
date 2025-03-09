@@ -1,12 +1,16 @@
 use std::io::Cursor;
 
+use aws_sdk_s3::primitives::{ByteStream, SdkBody};
 use errors::ImageUploadError;
 use image::{DynamicImage, GenericImageView};
 use tracing::info;
+use uuid::Uuid;
+
+use crate::configuration::{EVENT_IMAGES_BUCKET_NAME, EVENT_IMAGES_BUCKET_PREFIX};
 
 pub mod errors;
 
-const MAX_IMAGE_DIMENSION: u32 = 1920;
+const MAX_IMAGE_DIMENSION: u32 = 1280;
 const MIN_IMAGE_DIMENSION: u32 = 800;
 
 #[derive(Debug, PartialEq)]
@@ -34,9 +38,7 @@ impl TryFrom<&str> for ImageType {
             "image/jpeg" => Ok(ImageType::Jpeg),
             "image/png" => Ok(ImageType::Png),
             "image/avif" => Ok(ImageType::Avif),
-            _ => Err(ImageUploadError::UnsupportedImageFormat {
-                image_name: value.to_owned(),
-            }),
+            _ => Err(ImageUploadError::UnsupportedImageFormat {}),
         }
     }
 }
@@ -66,10 +68,10 @@ pub fn assert_image_size(image: DynamicImage) -> DynamicImage {
     )
 }
 
-pub async fn conform_image(name: &str, image: DynamicImage) -> Result<Vec<u8>, ImageUploadError> {
+pub async fn conform_image(image: DynamicImage) -> Result<Vec<u8>, ImageUploadError> {
     let incoming_image = assert_image_size(image);
 
-    info!("Encoding file {} as avif", name);
+    info!("Encoding file as avif");
     let mut encoded_image: Vec<u8> = Vec::new();
     incoming_image
         .write_to(
@@ -78,11 +80,38 @@ pub async fn conform_image(name: &str, image: DynamicImage) -> Result<Vec<u8>, I
         )
         .map_err(|e| {
             sentry::capture_error(&e);
-            ImageUploadError::ImageEncodingError {
-                image_name: name.to_owned(),
-            }
+            ImageUploadError::ImageEncodingError {}
         })?;
-    info!("Encoded file {} as avif", name);
+    info!("Encoded file as avif");
 
     Ok(encoded_image)
+}
+
+pub async fn upload_image(
+    s3: &aws_sdk_s3::Client,
+    event: Uuid,
+    image: Vec<u8>,
+) -> Result<Uuid, ImageUploadError> {
+    let new_image_id = Uuid::new_v4();
+
+    let body = SdkBody::from(image);
+    let image = ByteStream::from(body);
+    let path = format!(
+        "{prefix}/{event}/{id}.avif",
+        prefix = &*EVENT_IMAGES_BUCKET_PREFIX,
+        event = event,
+        id = new_image_id
+    );
+    s3.put_object()
+        .bucket(&*EVENT_IMAGES_BUCKET_NAME)
+        .key(path)
+        .body(image)
+        .send()
+        .await
+        .map_err(|e| {
+            sentry::capture_error(&e);
+            ImageUploadError::StorageError
+        })?;
+
+    Ok(new_image_id)
 }

@@ -1,4 +1,4 @@
-use crate::model::database::errors::{DatabaseQueryFailed, UnknownSdkError};
+use crate::database::errors::{DatabaseQueryFailed, UnknownSdkError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum GetEventError {
@@ -13,7 +13,7 @@ pub enum GetEventError {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum AddImagesError {
+pub enum AddImageError {
     #[error(transparent)]
     DatabaseQueryFailed(#[from] DatabaseQueryFailed),
     #[error(transparent)]

@@ -1,92 +1,72 @@
 use std::collections::HashMap;
 
 use aws_sdk_dynamodb::types::{AttributeValue, ScalarAttributeType};
-use axum::{response::IntoResponse, Json};
-use serde::Serialize;
 use uuid::Uuid;
 
-use crate::model::database::{
+use crate::database::{
     errors::ModelError,
     util::{
-        get_boolean, get_datetime, get_delimited, get_delimited_datetime, get_field, get_list,
-        get_nested_object, get_nested_optional_object, get_optional_datetime, get_optional_field,
+        get_boolean, get_datetime, get_delimited, get_field, get_nested_object, get_optional_field,
     },
 };
 
-pub mod fields {
-    pub const ID: &str = "PK";
-    pub const EVENT_DATE: &str = "SK";
-    pub const EVENT_CREATOR: &str = "EventCreator";
-    pub const DESCRIPTION: &str = "Description";
-    pub const TITLE: &str = "Title";
-    pub const PARTICIPANT_LIMIT: &str = "ParticipantLimit";
-    pub const CONTACT: &str = "Contact";
-    pub const SIGNUP_END_DATE: &str = "SignupEndDate";
-    pub const PHOTOES: &str = "Photoes";
-    pub const LOCATION: &str = "Location";
-    pub const MEETUP_LOCATION: &str = "MeetupLocation";
-    pub const MEETUP_TIME: &str = "MeetupTime";
-    pub const VISIBLE: &str = "Visible";
+pub mod columns {
+    include!(concat!(env!("OUT_DIR"), "/db_structure.rs"));
 }
 
-#[derive(serde::Deserialize, Serialize)]
-pub struct Contact {
-    organizer: Option<String>,
-    email: String,
-    phone: String,
+pub mod column_aliases {
+    use super::columns;
+
+    pub const ID: &str = columns::PARTITION_KEY_COLUMN;
 }
 
-#[derive(serde::Deserialize, Serialize)]
-pub struct Location {
-    name: String,
-    link: String,
-}
-
-#[derive(serde::Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Event {
     pub id: Uuid,
     pub title: HashMap<String, String>,
-    #[serde(with = "time::serde::rfc3339")]
     pub signup_end_date: time::OffsetDateTime,
-    #[serde(with = "time::serde::rfc3339")]
     pub event_date: time::OffsetDateTime,
-    pub meetup_time: Option<time::OffsetDateTime>,
-    pub meetup_location: Option<Location>,
-    pub admin_id: String,
-    pub location: Location,
-    pub contact: Contact,
+    pub creator_username: String,
     pub description: HashMap<String, String>,
     pub limit: Option<u16>,
-    pub photoes: Vec<Uuid>,
-    pub visible: bool,
+    pub image: Option<Uuid>,
+    pub event_visible: bool,
+    pub phone: Option<String>,
+    pub email: String,
+    pub email_visible: bool,
+    pub organizer_name: Option<String>,
+    pub location_name: String,
+    pub location_link: String,
 }
 
-impl IntoResponse for Event {
-    fn into_response(self) -> axum::response::Response {
-        Json(self).into_response()
-    }
+impl Event {
+    pub const SORT_KEY_VALUE: &str = "Event";
 }
 
 impl TryFrom<&HashMap<String, AttributeValue>> for Event {
     type Error = ModelError;
     fn try_from(item: &HashMap<String, AttributeValue>) -> Result<Self, Self::Error> {
-        let id: Uuid = get_delimited(item, fields::ID)?;
+        let id: Uuid = get_delimited(item, column_aliases::ID)?;
 
         Ok(Self {
             id,
-            signup_end_date: get_datetime(item, fields::SIGNUP_END_DATE)?,
-            event_date: get_delimited_datetime(item, fields::EVENT_DATE)?,
-            admin_id: get_field(item, fields::EVENT_CREATOR)?,
-            description: get_nested_object(item, fields::DESCRIPTION)?,
-            title: get_nested_object(item, fields::TITLE)?,
-            limit: get_optional_field(item, fields::PARTICIPANT_LIMIT, ScalarAttributeType::N)?,
-            contact: get_nested_object(item, fields::CONTACT)?,
-            location: get_nested_object(item, fields::LOCATION)?,
-            photoes: get_list(item, fields::PHOTOES)?,
-            meetup_location: get_nested_optional_object(item, fields::MEETUP_LOCATION)?,
-            meetup_time: get_optional_datetime(item, fields::MEETUP_TIME)?,
-            visible: get_boolean(item, fields::VISIBLE)?,
+            signup_end_date: get_datetime(item, columns::SIGNUP_DEADLINE_COLUMN)?,
+            event_date: get_datetime(item, columns::EVENT_DATE_COLUMN)?,
+            creator_username: get_field(item, columns::CREATOR_COLUMN)?,
+            description: get_nested_object(item, columns::DESCRIPTION_COLUMN)?,
+            title: get_nested_object(item, columns::TITLE_COLUMN)?,
+            limit: get_optional_field(
+                item,
+                columns::PARTICIPANTS_LIMIT_COLUMN,
+                ScalarAttributeType::N,
+            )?,
+            email: get_field(item, columns::EMAIL_COLUMN)?,
+            email_visible: get_boolean(item, columns::EMAIL_VISIBLE_COLUMN)?,
+            phone: get_optional_field(item, columns::PHONE_COLUMN, ScalarAttributeType::S)?,
+            location_name: get_field(item, columns::LOCATION_NAME_COLUMN)?,
+            location_link: get_field(item, columns::LOCATION_LINK_COLUMN)?,
+            image: get_optional_field(item, columns::IMAGE_COLUMN, ScalarAttributeType::S)?,
+            event_visible: get_boolean(item, columns::EVENT_VISIBLE_COLUMN)?,
+            organizer_name: get_optional_field(item, columns::NAME_COLUMN, ScalarAttributeType::S)?,
         })
     }
 }
