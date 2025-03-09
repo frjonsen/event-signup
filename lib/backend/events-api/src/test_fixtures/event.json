@@ -1,0 +1,19 @@
+{
+ "PK": "918c7cd9-5ead-4982-8802-d54ea12db186",
+ "SK": "Event",
+ "Creator": "Google_104204918422142738931",
+ "Description": "{ \"sv\": \"Vi ska på utflykt\", \"en\": \"We're going  on a trip\" }",
+ "Email": "creator@gmail.com",
+ "EmailVisible": true,
+ "EventDate": "2025-03-08T09:48:27Z",
+ "EventTitle": "{\"sv\": \"Utflykt till Tåkern\", \"en\": \"Excursion to Tåkern\" }",
+ "EventVisible": true,
+ "Image": "2eddaa1e-f61e-48ea-8d90-a715fe5ea68a",
+ "LocationLink": "https://maps.app.goo.gl/enEHVHCjwMR7cBX4A",
+ "LocationName": "Tåkern",
+ "Name": "Fredrik Jonsén",
+ "NameVisible": true,
+ "ParticipantsLimit": 5,
+ "Phone": "0703458321",
+ "SignupDeadline": "2025-02-05T03:00:00Z"
+}

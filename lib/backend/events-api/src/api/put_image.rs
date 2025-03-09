@@ -80,7 +80,7 @@ pub async fn put_image(
 
     let conformed_image = conform_image(image).await?;
     let image_id = upload_image(&s3, event_id, conformed_image).await?;
-    dynamodb.add_image_to_event(event_id, image_id).await?;
+    dynamodb.set_event_image(event_id, image_id).await?;
 
     Ok(PutImageResponse { image_id })
 }
