@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use aws_sdk_dynamodb::types::{AttributeValue, ScalarAttributeType};
-use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::database::{

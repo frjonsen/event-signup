@@ -3,7 +3,10 @@ import { useAuth } from "react-oidc-context";
 import Button from "@mui/material/Button";
 import { styled } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
-import { useColorScheme } from "@mui/material";
+import { AppBar, Box, IconButton, SvgIcon, Toolbar, useColorScheme } from "@mui/material";
+import seIcon from "../assets/se.svg?react";
+import ukIcon from "../assets/gb.svg?react";
+
 
 const MaterialUISwitch = styled(Switch)(({ theme }) => ({
   width: 62,
@@ -67,10 +70,18 @@ export default function PublicViewHeader() {
 
     const auth = useAuth();
 
-    return (<>
-        <Button onClick={() => i18n.changeLanguage("en")} aria-label="British Flag">🇬🇧</Button>
-        <Button onClick={() => i18n.changeLanguage("sv")} aria-label="Swedish Flag">🇸🇪</Button>
-        {auth?.isAuthenticated ? <span>{auth?.user?.profile.email}</span> : <Button onClick={() => auth.signinRedirect()}>{t("signIn")}</Button>}
-        <MaterialUISwitch sx={{ m: 1 }} checked={colorScheme === "dark"} onChange={t => setColorScheme(t.target.checked ? "dark" : "light")} />
-    </>);
+     
+    const ukButton = <SvgIcon component={ukIcon} inheritViewBox />
+    const seButton = <SvgIcon component={seIcon} inheritViewBox />
+
+    return (<AppBar position="static">
+      <Toolbar variant="dense" style={{ justifyContent: "right" }}>
+        <Box flexGrow={1}>
+          <IconButton onClick={() => i18n.changeLanguage("en")} aria-label="British Flag">{ukButton}</IconButton>
+          <IconButton onClick={() => i18n.changeLanguage("sv")} aria-label="Swedish Flag">{seButton}</IconButton>
+        </Box>
+        <Box style={{ marginRight: "1rem" }}><MaterialUISwitch sx={{ m: 1 }} checked={colorScheme === "dark"} onChange={t => setColorScheme(t.target.checked ? "dark" : "light")} /></Box>
+        {auth?.isAuthenticated ? <span>{auth?.user?.profile.email}</span> : <Button variant="contained" onClick={() => auth.signinRedirect()}>{t("signIn")}</Button>}
+      </Toolbar>
+    </AppBar>);
 }

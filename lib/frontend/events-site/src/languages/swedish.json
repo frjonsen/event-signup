@@ -3,6 +3,7 @@
     "loading": "Laddar",
     "location": "Plats",
     "signIn": "Logga in",
+    "participantLimit": "Begränsat till {{limit}} deltagare",
     "backend": {
         "UNEXPECTED_SERVER_ERROR": "Ett oväntat serverfel inträffade",
         "EVENT_NOT_FOUND": "Evenemanget hittades inte",

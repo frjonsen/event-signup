@@ -6,13 +6,20 @@ import { useTranslation} from "react-i18next";
 import { i18n } from "i18next";
 import * as axios from "axios";
 import { handleRequestError } from "../error";
+import EventIcon from "@mui/icons-material/Event";
+import PlaceIcon from "@mui/icons-material/Place";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneAndroid from "@mui/icons-material/PhoneAndroid";
+import GroupsIcon from "@mui/icons-material/Groups";
+import EmojiPeopleIcon from "@mui/icons-material/EmojiPeople";
+import { Grid2, Link, List, ListItem, ListItemIcon, ListItemText, Paper } from "@mui/material";
 
 
 interface Contact {
-    organizer: string | undefined;
-    email: string | undefined;
+    organizer: string | null;
+    email: string | null;
     emailVisible: boolean;
-    phone: string | undefined;
+    phone: string | null;
 }
 
 interface Location {
@@ -23,17 +30,17 @@ interface Location {
 interface Event {
     id: string;
     title: Translation,
-    signupEndDate: Date;
-    eventDate: Date;
+    signupEndDate: string;
+    eventDate: string;
     location: Location;
     contact: Contact;
     description: Translation;
-    limit: number | undefined;
+    limit: number | null;
     image: string | null;
     visible: boolean;
 }
 
-function renderEventImages(event: Event): JSX.Element{
+function renderEventImage(event: Event): JSX.Element{
     if (event.image === null) {
         return <></>;
     }
@@ -42,7 +49,7 @@ function renderEventImages(event: Event): JSX.Element{
     if (window.location.hostname === "localhost") {
         url = `https://events.jonsen.se${url}`;
     }
-    return <img className="eventImage" src={url} alt="Picture from event location" />;
+    return <img src={url} alt="Picture from event location" style={{ maxWidth: "100%" }} />;
 
 }
 
@@ -56,18 +63,44 @@ function renderEvent(event: Event, translator: i18n): JSX.Element {
     });
 
     console.log(eventTranslator.getResource("en", "translation", "location"))
+    // Intl.DateTimeFormat("sv-SE", { year: "numeric" }).format(event.eventDate);
 
     return (
-        <div>
-            {renderEventImages(event)}
-            <h1>{eventTranslator.t("title")}</h1>
-            <p>{eventTranslator.t("description")}</p>
-            <p>📅 {event.eventDate.toLocaleString("sv-SE",  { year: "numeric" })}</p>
-            <p>📍 <a href={event.location.link}>{event.location.name}</a></p>
-            <p>✉ {event.contact.email}</p>
-            <p>📞 {event.contact.phone}</p>
-            <p>👥 {event.limit}</p>
-        </div>
+        <Grid2 direction="column" container spacing={2} marginTop="1rem" display="flex" alignItems="center">
+            <Grid2 display="flex" justifyContent="center" size={{ xs: 12, xl: 6, lg: 10, }}>{renderEventImage(event)}</Grid2>
+            <Grid2 size={{ xs: 12, md: 6 }}>
+                <Paper style={{ paddingLeft: "2rem", paddingRight: "2rem" }} elevation={12}>
+                    <h1>{eventTranslator.t("title")}</h1>
+                    <p>{eventTranslator.t("description")}</p>
+                    <List>
+                        <ListItem>
+                            <ListItemIcon><EventIcon /></ListItemIcon> 
+                            <ListItemText>{new Date(event.eventDate).toLocaleString(translator.resolvedLanguage,  { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</ListItemText>
+                        </ListItem>
+                        <ListItem>
+                            <ListItemIcon><PlaceIcon /></ListItemIcon>
+                            <ListItemText><Link href={event.location.link}>{event.location.name}</Link></ListItemText>
+                        </ListItem>
+                        {event.contact.email && <ListItem>
+                            <ListItemIcon><EmailIcon /></ListItemIcon>
+                            <ListItemText>{event.contact.email}</ListItemText>
+                        </ListItem>}
+                        {event.contact.organizer && <ListItem>
+                            <ListItemIcon><EmojiPeopleIcon /></ListItemIcon>
+                            <ListItemText>{event.contact.organizer}</ListItemText>
+                        </ListItem>}
+                        {event.contact.phone && <ListItem>
+                            <ListItemIcon><PhoneAndroid /></ListItemIcon>
+                            <ListItemText>{event.contact.phone}</ListItemText>
+                        </ListItem>}
+                        {event.limit && <ListItem>
+                            <ListItemIcon><GroupsIcon /></ListItemIcon>
+                            <ListItemText>{eventTranslator.t("participantLimit", {limit: event.limit })}</ListItemText>
+                        </ListItem>}
+                    </List>
+                </Paper>
+            </Grid2>
+        </Grid2>
     )
 }
 
@@ -100,6 +133,7 @@ export default function Event() {
     return (
         <div>
             <PublicViewHeader />
+
             {inner}
         </div>
     );

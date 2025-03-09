@@ -1,12 +1,7 @@
-use std::collections::HashMap;
-
 use aws_sdk_dynamodb::types::AttributeValue;
 use tracing::error;
 
-use crate::{
-    configuration::EVENT_TABLE,
-    database::errors::{DatabaseQueryFailed, UnknownSdkError},
-};
+use crate::database::errors::{DatabaseQueryFailed, UnknownSdkError};
 
 use super::{
     errors::{AddImageError, GetEventError},
